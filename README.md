@@ -1,4 +1,3 @@
-# standalone-redeem-vue
 
 兑换前端（Vue 3 + Element Plus + Vite）。
 
