@@ -1,6 +1,7 @@
 
 兑换前端（Vue 3 + Element Plus + Vite）。
 
+[API对接文档](API文档-api.node-card.com.md)
 ## 特性
 
 - 单个兑换、批量兑换、消费记录查询、只查询不兑换
