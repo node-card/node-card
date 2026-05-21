@@ -1,17 +1,18 @@
 # 开放API对接文档（第三方兑换站接入）
 
-更新时间：2026-03-14  
+更新时间：2026-05-22  
 适用对象：使用你方网站/系统对接本平台 API 的开发者
 
 ## 1. 对接范围
 
-本对接文档仅包含以下 5 个接口：
+本对接文档仅包含以下 6 个接口：
 
 1. `POST /api/open/card/redeem` 兑换卡
 2. `GET|POST /api/open/card/status` 查询卡状态
 3. `POST /api/open/card/transactions` 查询交易
-4. `POST /api/open/merchant/list` 商户列表
-5. `GET|POST /api/open/platform/capacity` 平台容量
+4. `GET|POST /api/open/card/sms-code` 获取验证码
+5. `POST /api/open/merchant/list` 商户列表
+6. `GET|POST /api/open/platform/capacity` 平台容量
 
 ## 2. 请求与返回规范
 
@@ -195,15 +196,63 @@ Content-Type: application/x-www-form-urlencoded
 | `transactions[].content` | string | 交易内容 |
 | `transactions[].failureReason` | string | 失败原因（无则空字符串） |
 
+---
+
+### 3.6 获取验证码
+
+`GET /api/open/card/sms-code`  
+`POST /api/open/card/sms-code`
+
+请求参数：
+
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `card_key` | string | 是 | 卡密 |
+
+调用规则：
+
+- 仅支持“已兑换成功、未到期、状态可用”的卡密查询验证码
+- 卡密到期时会直接返回：`卡密到期无法获取验证码`
+
+
+成功返回 `data`：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `phone` | string | 绑定手机号后 4 位 |
+| `sms_body` | string | 验证码正文；无新验证码时返回 `暂无验证码` |
+
+说明：
+
+- 若访问过于频繁，接口会返回：`请求频繁，请10秒后再试`
+- 其他异常统一返回：`获取验证码失败`
+
+示例：
+
+```json
+{
+  "code": 1,
+  "msg": "",
+  "time": 1770000000,
+  "data": {
+    "phone": "2019",
+    "sms_body": "509673 is your code to confirm payment of USD 0.00 to Google."
+  }
+}
+```
+
 ## 4. 错误处理规则
 
 业务输入问题（直接返回可给用户看的提示）示例：
 
 - `卡密不存在！`
 - `该卡密对应卡片已到期`
+- `卡密到期无法获取验证码`
 - `当前模板限制商户，请先选择商户`
 - `该商户未配置当前平台的商户ID`
 - `该卡头暂时停用，请选择其他卡头，或者等恢复后再试`
+- `请求频繁，请10秒后再试`
+- `获取验证码失败`
 
 非输入问题（内部错误）统一返回：
 
@@ -217,7 +266,8 @@ Content-Type: application/x-www-form-urlencoded
 2. 用户输入卡密后先调用卡状态接口（可选，但推荐）。  
 3. 调用兑换接口拿卡信息。  
 4. 用户查看交易时调用交易接口。  
-5. 前端仅根据 `code` 判定成功失败，`msg` 直接展示给用户。
+5. 用户需要验证码时调用验证码接口。  
+6. 前端仅根据 `code` 判定成功失败，`msg` 直接展示给用户。
 
 ## 6. cURL 示例
 
@@ -243,3 +293,8 @@ curl -X POST 'https://your-domain.com/api/open/card/transactions' \
   -d 'card_key=9e366fa0-adf3-47d2-bbc1-f2749bf9dacd'
 ```
 
+获取验证码：
+
+```bash
+curl 'https://your-domain.com/api/open/card/sms-code?card_key=9e366fa0-adf3-47d2-bbc1-f2749bf9dacd'
+```
